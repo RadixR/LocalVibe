@@ -1,0 +1,8 @@
+<h2>{{ev.title}}</h2>
+<p><strong>Date:</strong> {{ev.eventDate}} at {{ev.startTime}}</p>
+<p><strong>Address:</strong> {{ev.address}}</p>
+<p>{{ev.description}}</p>
+<p><strong>Capacity:</strong> {{ev.capacity}}</p>
+{{#if ev.ticketLink}}
+  <p><a href="{{ev.ticketLink}}" target="_blank">Buy Tickets</a></p>
+{{/if}} 

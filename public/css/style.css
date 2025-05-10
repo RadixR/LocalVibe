@@ -1,0 +1,5 @@
+body { font-family: sans-serif; padding: 1rem; }
+nav a { margin-right: 1rem; }
+.error { color: red; }
+.container { max-width: 800px; margin: auto; }
+#map { margin-top: 1rem; } 

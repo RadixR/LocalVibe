@@ -1,0 +1,35 @@
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+/>
+<script
+  src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+></script>
+
+<h2>Event Map</h2>
+<div id="map" style="height:600px;"></div>
+
+<script>
+  const events = {{{events}}};
+  const map = L.map('map').setView([39.5, -98.35], 4);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  events.forEach(ev => {
+    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
+      encodeURIComponent(ev.address))
+    .then(res => res.json())
+    .then(loc => {
+      if (loc.length) {
+        const { lat, lon } = loc[0];
+        L.marker([lat, lon])
+         .addTo(map)
+         .bindPopup(
+           `<a href="/events/${ev._id}">${ev.title}</a><br>${ev.address}`
+         );
+      }
+    });
+  });
+</script> 
