@@ -1,0 +1,28 @@
+<h2>Your Dashboard</h2>
+
+<h3>Upcoming Events You RSVP'd To</h3>
+<ul>
+  {{#each upcoming}}
+    <li><a href="/events/{{this._id}}">{{this.title}}</a> on {{this.eventDate}}</li>
+  {{else}}
+    <li>No upcoming RSVPs.</li>
+  {{/each}}
+</ul>
+
+<h3>Past Events You Attended</h3>
+<ul>
+  {{#each past}}
+    <li><a href="/events/{{this._id}}">{{this.title}}</a> on {{this.eventDate}}</li>
+  {{else}}
+    <li>No past events.</li>
+  {{/each}}
+</ul>
+
+<h3>Your Bookmarked Events</h3>
+<ul>
+  {{#each bookmarks}}
+    <li><a href="/events/{{this._id}}">{{this.title}}</a> on {{this.eventDate}}</li>
+  {{else}}
+    <li>No bookmarks.</li>
+  {{/each}}
+</ul> 

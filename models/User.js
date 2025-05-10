@@ -10,7 +10,10 @@ const UserSchema = new mongoose.Schema({
     lowercase: true,
     validate: value => validator.isEmail(value)
   },
-  hashedPassword:       { type: String, required: true }
+  hashedPassword:       { type: String, required: true },
+  isAdmin:             { type: Boolean, default: false },
+  rsvpedEvents:         [{ eventID: String, rsvpTime: Date }],
+  bookmarkedEvents:     [String]
 });
 
 UserSchema.statics.hashPassword = async function(password) {

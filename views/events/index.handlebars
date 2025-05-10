@@ -1,4 +1,13 @@
 <h2>Upcoming Events</h2>
+<form method="GET" action="/events/search">
+  <input name="keyword"   placeholder="Keyword">
+  <input name="location"  placeholder="Location">
+  <input type="date" name="dateFrom">
+  <input type="date" name="dateTo">
+  <input name="category"  placeholder="Category">
+  <input name="tag"       placeholder="Tag">
+  <button type="submit">Search</button>
+</form>
 <ul>
   {{#each events}}
     <li>

@@ -1,5 +1,12 @@
 const mongoose = require('mongoose');
 
+const CommentSchema = new mongoose.Schema({
+  userID:    String,
+  name:      String,
+  comment:   String,
+  timestamp: { type: Date, default: Date.now }
+});
+
 const EventSchema = new mongoose.Schema({
   creatorID:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   title:       { type: String, required: true, trim: true },
@@ -11,9 +18,14 @@ const EventSchema = new mongoose.Schema({
   eventDate:   { type: Date, required: true },
   startTime:   String,
   endTime:     String,
+  location:    String,
   capacity:    Number,
   ticketLink:  String,
-  status:      { type: String, enum: ['pending','approved','rejected'], default: 'pending' }
+  status:      { type: String, enum: ['pending','approved','rejected'], default: 'pending' },
+  rsvpUserIDs: [mongoose.Schema.Types.ObjectId],
+  comments:    [CommentSchema]
 });
+
+EventSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('Event', EventSchema); 

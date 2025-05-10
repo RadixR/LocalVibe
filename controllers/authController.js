@@ -31,6 +31,7 @@ exports.postLogin = async (req, res) => {
     return res.render('auth/login', { error: 'Invalid credentials.' });
   }
   req.session.userId = user._id;
+  req.session.isAdmin = user.isAdmin;
   res.redirect('/');
 };
 

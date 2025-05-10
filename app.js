@@ -29,6 +29,12 @@ app.use(session({
   cookie: { httpOnly: true, secure: false }
 }));
 
+// --- Expose session to views ---
+app.use((req, res, next) => {
+  res.locals.session = req.session;
+  next();
+});
+
 // --- View Engine ---
 const { engine } = require('express-handlebars');
 app.engine('handlebars', engine({
@@ -40,9 +46,14 @@ app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, 'views'));
 
 // --- Routes ---
-app.use('/',      require('./routes/index'));
-app.use('/auth',  require('./routes/auth'));
-app.use('/events',require('./routes/events'));
+app.use('/',       require('./routes/index'));
+app.use('/auth',   require('./routes/auth'));
+app.use('/events', require('./routes/events'));
+app.use('/dashboard', require('./routes/dashboard'));
+app.use('/admin',     require('./routes/admin'));
+
+// --- 404 Handler ---
+app.use((req, res) => res.status(404).send('Page not found'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`LocalVibe listening on port ${PORT}`)); 
