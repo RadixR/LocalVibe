@@ -2,17 +2,22 @@ const xss   = require('xss');
 const Event = require('../models/Event');
 const User  = require('../models/User');
 
+// List all approved events
 exports.listEvents = async (req, res) => {
   const events = await Event.find({ status: 'approved' }).sort('eventDate');
-  res.render('events/index', { events });
+  const plainEvents = events.map(event => event.toObject());
+  res.render('events/index', { events: plainEvents, query: req.query });
 };
 
+// Show a single event's detail
 exports.showEvent = async (req, res) => {
   const ev = await Event.findById(req.params.id);
   if (!ev || ev.status !== 'approved') return res.sendStatus(404);
-  res.render('events/show', { ev });
+  const plainEvent = ev.toObject();
+  res.render('events/show', { ev: plainEvent, query: req.query });
 };
 
+// Render map view data
 exports.mapView = async (req, res) => {
   const events = await Event.find({ status: 'approved' });
   const data = events.map(e => ({
@@ -23,32 +28,7 @@ exports.mapView = async (req, res) => {
   res.render('events/map', { events: JSON.stringify(data) });
 };
 
-exports.newEventForm = (req, res) => {
-  if (!req.session.userId) return res.redirect('/auth/login');
-  res.render('events/new');
-};
-
-exports.createEvent = async (req, res) => {
-  if (!req.session.userId) return res.redirect('/auth/login');
-  const data = {
-    creatorID:   req.session.userId,
-    title:       xss(req.body.title),
-    description: xss(req.body.description),
-    address:     xss(req.body.address),
-    eventDate:   req.body.eventDate,
-    startTime:   req.body.startTime,
-    endTime:     req.body.endTime,
-    location:    xss(req.body.location),
-    capacity:    parseInt(req.body.capacity, 10),
-    category:    xss(req.body.category),
-    tags:        (req.body.tags || '').split(',').filter(Boolean).map(t => xss(t.trim())),
-    ticketLink:  xss(req.body.ticketLink||'')
-  };
-  await Event.create(data);
-  res.redirect('/events');
-};
-
-// 1. Search & Filtering
+// Search & filter events
 exports.searchEvents = async (req, res) => {
   const { keyword, category, tag, dateFrom, dateTo, location } = req.query;
   const q = { status: 'approved' };
@@ -63,53 +43,73 @@ exports.searchEvents = async (req, res) => {
   res.render('events/index', { events, query: req.query });
 };
 
-// 2. Comments
+// Show "create new event" form
+exports.newEventForm = (req, res) => {
+  if (!req.session.userId) return res.redirect('/auth/login');
+  res.render('events/new');
+};
+
+// Handle new event submission
+exports.createEvent = async (req, res) => {
+  if (!req.session.userId) return res.redirect('/auth/login');
+  const data = {
+    creatorID:   req.session.userId,
+    title:       xss(req.body.title),
+    description: xss(req.body.description),
+    address:     xss(req.body.address),
+    eventDate:   new Date(req.body.eventDate),
+    startTime:   req.body.startTime,
+    endTime:     req.body.endTime,
+    location:    xss(req.body.location),
+    capacity:    parseInt(req.body.capacity, 10),
+    category:    xss(req.body.category),
+    tags:        (req.body.tags || '').split(',').filter(Boolean).map(t => xss(t.trim())),
+    ticketLink:  xss(req.body.ticketLink || '')
+  };
+  await Event.create(data);
+  res.redirect('/events');
+};
+
+// Add a comment to an event
 exports.addComment = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
-  const ev   = await Event.findById(req.params.id);
+  const ev = await Event.findById(req.params.id);
   ev.comments.push({
-    userID:    req.session.userId,
-    name:      xss(req.body.name || 'Anonymous'),
-    comment:   xss(req.body.comment)
+    userID:  req.session.userId,
+    name:    xss(req.body.name || 'Anonymous'),
+    comment: xss(req.body.comment)
   });
   await ev.save();
   res.redirect(`/events/${ev._id}`);
 };
 
-// 3. RSVP with integrity checks
+// RSVP to an event with integrity checks
 exports.rsvpEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   const ev   = await Event.findById(req.params.id);
   const user = await User.findById(req.session.userId);
 
-  // Past event?
   if (ev.eventDate < new Date())
     return res.redirect(`/events/${ev._id}?error=Event%20in%20the%20past`);
-
-  // Capacity full?
   if (ev.rsvpUserIDs.length >= ev.capacity)
     return res.redirect(`/events/${ev._id}?error=Event%20full`);
-
-  // Already RSVPd?
   if (ev.rsvpUserIDs.includes(req.session.userId))
     return res.redirect(`/events/${ev._id}?error=Already%20RSVPd`);
 
-  // Overlapping date
   const conflict = user.rsvpedEvents.some(r =>
-    ev.eventDate.toDateString() === new Date(r.rsvpTime).toDateString()
+    new Date(r.rsvpTime).toDateString() === ev.eventDate.toDateString()
   );
   if (conflict)
     return res.redirect(`/events/${ev._id}?error=Overlapping%20event`);
 
   ev.rsvpUserIDs.push(req.session.userId);
   user.rsvpedEvents.push({ eventID: ev._id, rsvpTime: new Date() });
-
   await ev.save();
   await user.save();
   res.redirect(`/events/${ev._id}`);
 };
 
-// 4. Bookmark
+// Bookmark an event
 exports.bookmarkEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   const user = await User.findById(req.session.userId);
