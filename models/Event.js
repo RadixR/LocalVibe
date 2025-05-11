@@ -26,6 +26,7 @@ const EventSchema = new mongoose.Schema({
   comments:    [CommentSchema]
 });
 
+// Full‐text search on title & description
 EventSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('Event', EventSchema); 
