@@ -1,11 +1,11 @@
 <h2>Upcoming Events</h2>
 <form method="GET" action="/events/search">
-  <input name="keyword"   placeholder="Keyword">
-  <input name="location"  placeholder="Location">
-  <input type="date" name="dateFrom">
-  <input type="date" name="dateTo">
-  <input name="category"  placeholder="Category">
-  <input name="tag"       placeholder="Tag">
+  <input name="keyword"   placeholder="Keyword"     value="{{query.keyword}}">
+  <input name="location"  placeholder="Location"    value="{{query.location}}">
+  <input type="date" name="dateFrom" value="{{query.dateFrom}}">
+  <input type="date" name="dateTo"   value="{{query.dateTo}}">
+  <input name="category"  placeholder="Category"    value="{{query.category}}">
+  <input name="tag"       placeholder="Tag"         value="{{query.tag}}">
   <button type="submit">Search</button>
 </form>
 <ul>
@@ -13,7 +13,7 @@
     <li>
       <a href="/events/{{this._id}}">
         <strong>{{this.title}}</strong>
-      </a> — {{this.eventDate}} at {{this.startTime}}<br>
+      </a> — {{formatDate this.eventDate}} at {{this.startTime}}<br>
       {{this.address}}
     </li>
   {{/each}}

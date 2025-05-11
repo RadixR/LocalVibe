@@ -29,7 +29,7 @@ app.use(session({
   cookie: { httpOnly: true, secure: false }
 }));
 
-// --- Expose session to views ---
+// Make session data available to all views
 app.use((req, res, next) => {
   res.locals.session = req.session;
   next();
@@ -40,7 +40,21 @@ const { engine } = require('express-handlebars');
 app.engine('handlebars', engine({
   defaultLayout: 'main',
   layoutsDir: path.join(__dirname, 'views/layouts'),
-  partialsDir: path.join(__dirname, 'views/partials')
+  partialsDir: path.join(__dirname, 'views/partials'),
+  helpers: {
+    formatDate: function(date) {
+      if (!date) return '';
+      const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
+    eq: (a, b) => a === b
+  }
 }));
 app.set('view engine', 'handlebars');
 app.set('views', path.join(__dirname, 'views'));
@@ -51,9 +65,10 @@ app.use('/auth',   require('./routes/auth'));
 app.use('/events', require('./routes/events'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/admin',     require('./routes/admin'));
+app.use('/notifications', require('./routes/notifications'));
 
-// --- 404 Handler ---
-app.use((req, res) => res.status(404).send('Page not found'));
+// --- 404 Wildcard ---
+app.use('*', (req, res) => res.sendStatus(404));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`LocalVibe listening on port ${PORT}`)); 

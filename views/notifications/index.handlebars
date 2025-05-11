@@ -1,0 +1,30 @@
+<h2>Your Notifications</h2>
+
+{{#if notifs.length}}
+  <div>
+    <form action="/notifications/mark-all-read" method="POST">
+      <button type="submit">Mark All as Read</button>
+    </form>
+  </div>
+
+  <div>
+    {{#each notifs}}
+      <div class="{{#unless isRead}}unread{{/unless}}">
+        <div>
+          <h5>{{message}}</h5>
+          <small>{{formatDate timestamp}}</small>
+        </div>
+        {{#if eventID}}
+          <a href="/events/{{eventID}}">View Event</a>
+        {{/if}}
+        {{#unless isRead}}
+          <form action="/notifications/{{_id}}/mark-read" method="POST">
+            <button type="submit">Mark as Read</button>
+          </form>
+        {{/unless}}
+      </div>
+    {{/each}}
+  </div>
+{{else}}
+  <p>You have no notifications.</p>
+{{/if}} 
