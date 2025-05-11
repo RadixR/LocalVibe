@@ -1,16 +1,17 @@
 const express = require('express');
-const router  = express.Router();
-const ctrl    = require('../controllers/eventController');
+const router = express.Router();
+const ctrl = require('../controllers/eventController');
+const { ensureLoggedIn } = require('../middleware/auth');
 
-router.get('/search',             ctrl.searchEvents);
-router.get('/map',                ctrl.mapView);
-router.get('/new',                ctrl.newEventForm);
-router.get('/:id',                ctrl.showEvent);
-router.get('/',                   ctrl.listEvents);
-
-router.post('/:id/comments',      ctrl.addComment);
-router.post('/:id/rsvp',          ctrl.rsvpEvent);
-router.post('/:id/bookmark',      ctrl.bookmarkEvent);
-router.post('/',                  ctrl.createEvent);
+// Event routes
+router.get('/', ctrl.listEvents);
+router.get('/map', ctrl.mapView);
+router.get('/new', ensureLoggedIn, ctrl.newEventForm);
+router.post('/', ensureLoggedIn, ctrl.createEvent);
+router.get('/search', ctrl.searchEvents);
+router.get('/:id', ctrl.showEvent);
+router.post('/:id/comments', ensureLoggedIn, ctrl.addComment);
+router.post('/:id/rsvp', ensureLoggedIn, ctrl.rsvpEvent);
+router.post('/:id/bookmark', ensureLoggedIn, ctrl.bookmarkEvent);
 
 module.exports = router; 
