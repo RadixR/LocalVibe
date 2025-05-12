@@ -1,25 +1,25 @@
 <h2>Your Notifications</h2>
 
 {{#if notifs.length}}
-  <div>
-    <form action="/notifications/mark-all-read" method="POST">
-      <button type="submit">Mark All as Read</button>
+  <div class="mb-3">
+    <form action="/notifications/mark-all-read" method="POST" class="d-inline">
+      <button type="submit" class="btn btn-secondary">Mark All as Read</button>
     </form>
   </div>
 
-  <div>
+  <div class="list-group">
     {{#each notifs}}
-      <div class="{{#unless isRead}}unread{{/unless}}">
-        <div>
-          <h5>{{message}}</h5>
+      <div class="list-group-item {{#unless isRead}}list-group-item-primary{{/unless}}">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{message}}</h5>
           <small>{{formatDate timestamp}}</small>
         </div>
         {{#if eventID}}
-          <a href="/events/{{eventID}}">View Event</a>
+          <a href="/events/{{eventID}}" class="btn btn-sm btn-outline-primary mt-2">View Event</a>
         {{/if}}
         {{#unless isRead}}
-          <form action="/notifications/{{_id}}/mark-read" method="POST">
-            <button type="submit">Mark as Read</button>
+          <form action="/notifications/{{_id}}/mark-read" method="POST" class="d-inline">
+            <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Mark as Read</button>
           </form>
         {{/unless}}
       </div>

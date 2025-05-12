@@ -8,28 +8,89 @@
 
 <h2>Event Map</h2>
 <div id="map" style="height:600px;"></div>
+<div id="error-message" style="display:none; color: red; margin-top: 10px;"></div>
 
 <script>
   const events = {{{events}}};
+  // Initialize map centered on US
   const map = L.map('map').setView([39.5, -98.35], 4);
+  const errorDiv = document.getElementById('error-message');
+  let markersAdded = 0;
 
+  // Add tile layer immediately
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
-  events.forEach(ev => {
-    fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
+  // Function to validate address format
+  function isValidAddress(address) {
+    // Basic validation: address should contain at least a street number and city
+    const hasNumber = /\d/.test(address);
+    const hasCity = /[A-Za-z]/.test(address);
+    return hasNumber && hasCity;
+  }
+
+  // Function to show error message
+  function showError(message) {
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+  }
+
+  // Process all events immediately
+  const geocodePromises = events.map(ev => {
+    if (!isValidAddress(ev.address)) {
+      console.warn(`Invalid address format for event "${ev.title}": ${ev.address}`);
+      return Promise.resolve(null);
+    }
+
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' +
       encodeURIComponent(ev.address))
-    .then(res => res.json())
-    .then(loc => {
-      if (loc.length) {
-        const { lat, lon } = loc[0];
-        L.marker([lat, lon])
-         .addTo(map)
-         .bindPopup(
-           `<a href="/events/${ev._id}">${ev.title}</a><br>${ev.address}`
-         );
-      }
-    });
+      .then(res => res.json())
+      .then(loc => {
+        if (loc && loc.length > 0) {
+          const { lat, lon } = loc[0];
+          L.marker([lat, lon])
+           .addTo(map)
+           .bindPopup(
+             `<a href="/events/${ev._id}">${ev.title}</a><br>${ev.address}`
+           );
+          markersAdded++;
+          return { lat, lon };
+        } else {
+          console.warn(`Could not geocode address for event "${ev.title}": ${ev.address}`);
+          return null;
+        }
+      })
+      .catch(error => {
+        console.error(`Error geocoding address for event "${ev.title}":`, error);
+        return null;
+      });
   });
-</script> 
+
+  // Wait for all geocoding to complete
+  Promise.all(geocodePromises).then(results => {
+    const validLocations = results.filter(r => r !== null);
+    
+    if (validLocations.length === 0) {
+      showError('No valid event locations found. Please check that events have valid addresses.');
+    } else {
+      // Fit map bounds to show all markers
+      const bounds = L.latLngBounds(validLocations);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  });
+</script>
+
+<style>
+  #map {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  #error-message {
+    padding: 10px;
+    background-color: #fff3f3;
+    border: 1px solid #ffcdd2;
+    border-radius: 4px;
+  }
+</style> 

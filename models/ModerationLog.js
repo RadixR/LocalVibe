@@ -5,7 +5,7 @@ const ModerationLogSchema = new mongoose.Schema({
   adminID:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   action:    {
     type: String,
-    enum: ['approved','rejected'],
+    enum: ['approved','rejected','requested_changes'],
     required: true
   },
   notes:     String,

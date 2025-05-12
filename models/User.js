@@ -12,8 +12,12 @@ const UserSchema = new mongoose.Schema({
   },
   hashedPassword:       { type: String, required: true },
   isAdmin:             { type: Boolean, default: false },
-  rsvpedEvents:         [{ eventID: String, rsvpTime: Date }],
-  bookmarkedEvents:     [String]
+  createdEvents:        [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  rsvpedEvents:         [{
+    eventID: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+    rsvpTime: { type: Date, default: Date.now }
+  }],
+  bookmarkedEvents:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }]
 });
 
 UserSchema.statics.hashPassword = async function(password) {

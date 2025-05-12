@@ -19,13 +19,17 @@ exports.showEvent = async (req, res) => {
 
 // Render map view data
 exports.mapView = async (req, res) => {
-  const events = await Event.find({ status: 'approved' });
-  const data = events.map(e => ({
-    _id:    e._id,
-    title:  e.title,
-    address:e.address
-  }));
-  res.render('events/map', { events: JSON.stringify(data) });
+  try {
+    const events = await Event.find({ status: 'approved' });
+    const data = events.map(e => ({
+      _id: e._id,
+      title: e.title,
+      address: e.address
+    }));
+    res.render('events/map', { events: JSON.stringify(data) });
+  } catch {
+    res.render('events/map', { events: '[]' });
+  }
 };
 
 // Search & filter events
@@ -52,22 +56,31 @@ exports.newEventForm = (req, res) => {
 // Handle new event submission
 exports.createEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
-  const data = {
-    creatorID:   req.session.userId,
-    title:       xss(req.body.title),
-    description: xss(req.body.description),
-    address:     xss(req.body.address),
-    eventDate:   new Date(req.body.eventDate),
-    startTime:   req.body.startTime,
-    endTime:     req.body.endTime,
-    location:    xss(req.body.location),
-    capacity:    parseInt(req.body.capacity, 10),
-    category:    xss(req.body.category),
-    tags:        (req.body.tags || '').split(',').filter(Boolean).map(t => xss(t.trim())),
-    ticketLink:  xss(req.body.ticketLink || '')
-  };
-  await Event.create(data);
-  res.redirect('/events');
+  
+  try {
+    const data = {
+      creatorID:   req.session.userId,
+      title:       xss(req.body.title),
+      description: xss(req.body.description),
+      address:     xss(req.body.address),
+      eventDate:   new Date(req.body.eventDate),
+      startTime:   req.body.startTime,
+      endTime:     req.body.endTime,
+      location:    xss(req.body.location || ''),
+      capacity:    parseInt(req.body.capacity, 10),
+      category:    xss(req.body.category),
+      tags:        (req.body.tags || '').split(',').filter(Boolean).map(t => xss(t.trim())),
+      ticketLink:  xss(req.body.ticketLink || '')
+    };
+
+    const event = await Event.create(data);
+    res.redirect('/events');
+  } catch (error) {
+    res.render('events/new', { 
+      error: 'Error creating event. Please make sure all required fields are filled out correctly.',
+      formData: req.body
+    });
+  }
 };
 
 // Add a comment to an event
@@ -119,4 +132,13 @@ exports.bookmarkEvent = async (req, res) => {
     await user.save();
   }
   res.redirect(`/events/${id}`);
+};
+
+// Delete event by its author
+exports.deleteEvent = async (req, res) => {
+  if (!req.session.userId) return res.redirect('/auth/login');
+  const ev = await Event.findById(req.params.id);
+  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.sendStatus(403);
+  await Event.findByIdAndDelete(req.params.id);
+  res.redirect('/dashboard');
 }; 

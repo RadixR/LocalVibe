@@ -5,11 +5,18 @@
   <label>Address <input name="address" required placeholder="123 Main St, Hoboken, NJ"></label><br>
   <label>Date <input type="date" name="eventDate" required></label><br>
   <label>Start Time <input type="time" name="startTime" required></label><br>
-  <label>End Time <input type="time" name="endTime"></label><br>
+  <label>End Time <input type="time" name="endTime" required></label><br>
   <label>Location (optional) <input name="location"></label><br>
   <label>Capacity <input type="number" name="capacity" required></label><br>
-  <label>Ticket Link <input type="url" name="ticketLink"></label><br>
-  <label>Category <input name="category"></label><br>
+  <label>Category <select name="category" required>
+    <option value="">Select a category</option>
+    <option value="Music">Music</option>
+    <option value="Technology">Technology</option>
+    <option value="Food">Food</option>
+    <option value="Sports">Sports</option>
+    <option value="Arts">Arts</option>
+  </select></label><br>
   <label>Tags (comma-separated) <input name="tags"></label><br>
+  <label>Ticket Link (optional) <input type="url" name="ticketLink"></label><br>
   <button type="submit">Submit for Approval</button>
 </form> 

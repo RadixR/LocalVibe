@@ -1,18 +1,123 @@
-<h2>Pending Events</h2>
-<ul>
-  {{#each events}}
-    <li>
-      <strong>{{this.title}}</strong> by {{this.creatorID}}
-      <form method="POST" action="/admin/events/{{this._id}}/approve" style="display:inline">
-        <input name="notes" placeholder="Notes">
-        <button type="submit">Approve</button>
-      </form>
-      <form method="POST" action="/admin/events/{{this._id}}/reject" style="display:inline">
-        <input name="notes" placeholder="Notes">
-        <button type="submit">Reject</button>
-      </form>
-    </li>
+<div class="container">
+  <h1>Pending Events</h1>
+  
+  {{#if events.length}}
+    <div class="events-grid">
+      {{#each events}}
+        <div class="event-card">
+          <h2>{{this.title}}</h2>
+          
+          <div class="event-details">
+            <p><strong>Created by:</strong> {{#if this.creatorID}}{{this.creatorID.firstName}} {{this.creatorID.lastName}}{{else}}Unknown Creator{{/if}}</p>
+            <p><strong>Date:</strong> {{#if this.eventDate}}{{formatDate this.eventDate}}{{else}}Date not set{{/if}}</p>
+            <p><strong>Time:</strong> {{this.startTime}} - {{this.endTime}}</p>
+            <p><strong>Location:</strong> {{this.address}}</p>
+            <p><strong>Category:</strong> {{this.category}}</p>
+            <p><strong>Capacity:</strong> {{this.capacity}}</p>
+            <p><strong>Description:</strong> {{this.description}}</p>
+          </div>
+
+          <div class="admin-actions">
+            <form method="POST" action="/admin/events/{{this._id}}/approve" class="action-form">
+              <input type="text" name="notes" placeholder="Approval notes (optional)">
+              <button type="submit" class="btn-approve">Approve</button>
+            </form>
+
+            <form method="POST" action="/admin/events/{{this._id}}/reject" class="action-form">
+              <input type="text" name="notes" placeholder="Rejection reason (required)" required>
+              <button type="submit" class="btn-reject">Reject</button>
+            </form>
+
+            <form method="POST" action="/admin/events/{{this._id}}/request-changes" class="action-form">
+              <input type="text" name="notes" placeholder="Requested changes (required)" required>
+              <button type="submit" class="btn-request">Request Changes</button>
+            </form>
+          </div>
+        </div>
+      {{/each}}
+    </div>
   {{else}}
-    <li>No pending events.</li>
-  {{/each}}
-</ul> 
+    <p>No pending events found.</p>
+  {{/if}}
+</div>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+  }
+
+  .event-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .event-details {
+    margin: 15px 0;
+  }
+
+  .event-details p {
+    margin: 8px 0;
+  }
+
+  .admin-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+  }
+
+  .action-form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .action-form input {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+
+  .btn-approve {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-reject {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-request {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  button:hover {
+    opacity: 0.9;
+  }
+</style> 

@@ -53,7 +53,9 @@ app.engine('handlebars', engine({
         day: 'numeric'
       });
     },
-    eq: (a, b) => a === b
+    eq: function(a, b) {
+      return a.toString() === b.toString();
+    }
   }
 }));
 app.set('view engine', 'handlebars');

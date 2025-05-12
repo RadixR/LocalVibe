@@ -3,7 +3,10 @@
 <h3>Upcoming Events You RSVP'd To</h3>
 <ul>
   {{#each upcoming}}
-    <li><a href="/events/{{this._id}}">{{this.title}}</a> on {{this.eventDate}}</li>
+    <li>
+      <a href="/events/{{this._id}}">{{this.title}}</a>
+      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+    </li>
   {{else}}
     <li>No upcoming RSVPs.</li>
   {{/each}}
@@ -12,7 +15,10 @@
 <h3>Past Events You Attended</h3>
 <ul>
   {{#each past}}
-    <li><a href="/events/{{this._id}}">{{this.title}}</a> on {{this.eventDate}}</li>
+    <li>
+      <a href="/events/{{this._id}}">{{this.title}}</a>
+      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+    </li>
   {{else}}
     <li>No past events.</li>
   {{/each}}
@@ -21,8 +27,36 @@
 <h3>Your Bookmarked Events</h3>
 <ul>
   {{#each bookmarks}}
-    <li><a href="/events/{{this._id}}">{{this.title}}</a> on {{this.eventDate}}</li>
+    <li>
+      <a href="/events/{{this._id}}">{{this.title}}</a>
+      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+    </li>
   {{else}}
     <li>No bookmarks.</li>
   {{/each}}
-</ul> 
+</ul>
+
+<style>
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  li {
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  li a {
+    font-weight: bold;
+    text-decoration: none;
+    color: #2196F3;
+  }
+  
+  li span {
+    color: #666;
+    margin-left: 10px;
+  }
+</style> 

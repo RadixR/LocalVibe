@@ -19,6 +19,12 @@
     <button type="submit">Bookmark</button>
   </form>
 
+  {{#if (eq ev.creatorID session.userId)}}
+    <form method="POST" action="/events/{{ev._id}}/delete">
+      <button type="submit">Delete Event</button>
+    </form>
+  {{/if}}
+
   <h3>Comments</h3>
   <ul>
     {{#each ev.comments}}
