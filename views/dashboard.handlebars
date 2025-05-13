@@ -7,8 +7,11 @@
   {{#each createdEvents}}
     <li>
       <a href="/events/{{this._id}}">{{this.title}}</a>
-      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+      <span>on {{formatDate this.eventDate}} at {{formatTime this.startTime}}</span>
       <span class="status-{{this.status}}">Status: {{formatStatus this.status}}</span>
+      <form method="POST" action="/events/{{this._id}}/delete" style="display:inline; margin-left:1rem">
+        <button type="submit">Delete</button>
+      </form>
     </li>
   {{else}}
     <li>You haven't created any events yet.</li>
@@ -20,7 +23,10 @@
   {{#each upcoming}}
     <li>
       <a href="/events/{{this._id}}">{{this.title}}</a>
-      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+      <span>on {{formatDate this.eventDate}} at {{formatTime this.startTime}}</span>
+      <form method="POST" action="/events/{{this._id}}/unrsvp" style="display:inline; margin-left:1rem">
+        <button type="submit">Un-RSVP</button>
+      </form>
     </li>
   {{else}}
     <li>No upcoming RSVPs.</li>
@@ -32,7 +38,7 @@
   {{#each past}}
     <li>
       <a href="/events/{{this._id}}">{{this.title}}</a>
-      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+      <span>on {{formatDate this.eventDate}} at {{formatTime this.startTime}}</span>
     </li>
   {{else}}
     <li>No past events.</li>
@@ -44,7 +50,7 @@
   {{#each bookmarks}}
     <li>
       <a href="/events/{{this._id}}">{{this.title}}</a>
-      <span>on {{formatDate this.eventDate}} at {{this.startTime}}</span>
+      <span>on {{formatDate this.eventDate}} at {{formatTime this.startTime}}</span>
     </li>
   {{else}}
     <li>No bookmarks.</li>
@@ -94,5 +100,8 @@
     font-style: normal;
     color: blue;
     margin-left: 10px;
+  }
+  button {
+    margin-left: 5px;
   }
 </style> 

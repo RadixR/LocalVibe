@@ -1,25 +1,42 @@
 const Notification = require('../models/Notification');
+const User         = require('../models/User');
+const Event        = require('../models/Event');
 
 exports.getNotifications = async (req, res) => {
-  const notifs = await Notification.find({ userID: req.session.userId })
+  const staticNotifs = await Notification.find({ userID: req.session.userId })
     .sort({ timestamp: -1 })
-    .limit(50);
-  res.render('notifications/index', { notifs });
+    .lean();
+
+  const user = await User.findById(req.session.userId)
+    .populate('rsvpedEvents.eventID', 'title eventDate startTime');
+  const now = new Date();
+  const upcomingRsvps = user.rsvpedEvents
+    .map(r => {
+      const ev = r.eventID;
+      if (!ev) return null;
+      const dt = new Date(
+        ev.eventDate.toISOString().slice(0,10) + 'T' + ev.startTime
+      );
+      return dt > now
+        ? {
+            _id:       ev._id,
+            title:     ev.title,
+            isoString: dt.toISOString()
+          }
+        : null;
+    })
+    .filter(x => x);
+
+  res.render('notifications/index', { staticNotifs, upcomingRsvps });
 };
 
-exports.markAsRead = async (req, res) => {
-  await Notification.updateOne(
-    { _id: req.params.id, userID: req.session.userId },
-    { isRead: true }
-  );
+exports.deleteNotification = async (req, res) => {
+  await Notification.deleteOne({ _id: req.params.id, userID: req.session.userId });
   res.redirect('/notifications');
 };
 
-exports.markAllAsRead = async (req, res) => {
-  await Notification.updateMany(
-    { userID: req.session.userId, isRead: false },
-    { isRead: true }
-  );
+exports.deleteAllNotifications = async (req, res) => {
+  await Notification.deleteMany({ userID: req.session.userId });
   res.redirect('/notifications');
 };
 

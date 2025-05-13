@@ -1,30 +1,63 @@
 <h2>Your Notifications</h2>
 
-{{#if notifs.length}}
-  <div class="mb-3">
-    <form action="/notifications/mark-all-read" method="POST" class="d-inline">
-      <button type="submit" class="btn btn-secondary">Mark All as Read</button>
-    </form>
-  </div>
-
-  <div class="list-group">
-    {{#each notifs}}
-      <div class="list-group-item {{#unless isRead}}list-group-item-primary{{/unless}}">
-        <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">{{message}}</h5>
-          <small>{{formatDate timestamp}}</small>
-        </div>
-        {{#if eventID}}
-          <a href="/events/{{eventID}}" class="btn btn-sm btn-outline-primary mt-2">View Event</a>
-        {{/if}}
-        {{#unless isRead}}
-          <form action="/notifications/{{_id}}/mark-read" method="POST" class="d-inline">
-            <button type="submit" class="btn btn-sm btn-outline-secondary mt-2">Mark as Read</button>
-          </form>
-        {{/unless}}
-      </div>
+{{#if upcomingRsvps.length}}
+  <h3>Upcoming Events</h3>
+  <ul id="upcoming-list">
+    {{#each upcomingRsvps}}
+      <li>
+        <a href="/events/{{this._id}}">{{this.title}}</a>
+        <span class="countdown" data-datetime="{{this.isoString}}">
+          Loading…
+        </span>
+      </li>
     {{/each}}
-  </div>
+  </ul>
+{{/if}}
+
+{{#if staticNotifs.length}}
+  <h3>Announcements</h3>
+  <form action="/notifications/delete-all" method="POST" style="margin-bottom:1rem">
+    <button type="submit">Delete All</button>
+  </form>
+  <table>
+    <thead>
+      <tr><th>Message</th><th>Received</th><th>Action</th></tr>
+    </thead>
+    <tbody>
+      {{#each staticNotifs}}
+        <tr>
+          <td>
+            {{this.message}}
+            {{#if (eq this.type 'eventRejected')}}
+              &nbsp;Please recreate the event from your dashboard.
+            {{/if}}
+            {{#if (eq this.type 'eventChangesRequested')}}
+              &nbsp;Please recreate the event from your dashboard.
+            {{/if}}
+          </td>
+          <td>{{formatDateTime this.timestamp}}</td>
+          <td>
+            <form action="/notifications/{{this._id}}/delete" method="POST" style="display:inline">
+              <button type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
 {{else}}
-  <p>You have no notifications.</p>
-{{/if}} 
+  {{#unless upcomingRsvps.length}}
+    <p>No notifications.</p>
+  {{/unless}}
+{{/if}}
+
+<script src="/js/notifications.js"></script>
+
+<style>
+  table { width:100%; border-collapse:collapse; margin-top:1rem }
+  th, td { border:1px solid #ccc; padding:.5rem; text-align:left }
+  th { background:#f5f5f5 }
+  #upcoming-list { list-style:none; padding:0; }
+  #upcoming-list li { margin: .5rem 0; }
+  .countdown { margin-left:1rem; font-weight:bold; }
+</style> 

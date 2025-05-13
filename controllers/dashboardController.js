@@ -17,8 +17,15 @@ exports.dashboard = async (req, res) => {
 
     const plainRsvps = allRsvps.map(event => event.toObject());
 
-    const upcoming = plainRsvps.filter(e => new Date(e.eventDate) >= now);
-    const past     = plainRsvps.filter(e => new Date(e.eventDate) < now);
+    const upcoming = plainRsvps.filter(e => {
+      const start = new Date(`${e.eventDate.toISOString().slice(0,10)}T${e.startTime}`);
+      return start > now;
+    });
+    const past = plainRsvps.filter(e => {
+      const start = new Date(`${e.eventDate.toISOString().slice(0,10)}T${e.startTime}`);
+      return start <= now;
+    });
+
 
     const bookmarks = await Event.find({
       _id: { $in: user.bookmarkedEvents }, status: 'approved'

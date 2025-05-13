@@ -53,30 +53,55 @@ app.engine('handlebars', engine({
         day: 'numeric'
       });
     },
+    formatTime: function(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const suffix = h >= 12 ? 'PM' : 'AM';
+      const hour12 = ((h + 11) % 12) + 1;
+      return hour12 + ':' + String(m).padStart(2, '0') + ' ' + suffix;
+    },
+    formatDateTime: function(date) {
+      const d = new Date(date);
+      if (isNaN(d)) return '';
+      const dateStr = d.toLocaleDateString('en-US', {
+        month: 'short',
+        day:   'numeric',
+        year:  'numeric'
+      });
+      const h = d.getHours(), m = d.getMinutes();
+      const suffix = h >= 12 ? 'PM' : 'AM';
+      const hour12 = ((h + 11) % 12) + 1;
+      return `${dateStr} ${hour12}:${String(m).padStart(2,'0')} ${suffix}`;
+    },
     formatForInput: function(date) {
       const d = new Date(date);
       return isNaN(d) ? '' : d.toISOString().slice(0,10);
     },
     eq: function(a, b) {
-      if (typeof a === 'undefined' || typeof b === 'undefined') {
-        return false; 
+      if (a == null || b == null) {
+        return false;
       }
       return a.toString() === b.toString();
     },
-    formatStatus: function(status) {
-      if (!status) return '';
-      switch (status) {
-        case 'pending': return 'Pending Approval';
-        case 'approved': return 'Approved';
-        case 'rejected': return 'Rejected';
-        case 'requested_changes': return 'Changes Requested';
-        default: return status.charAt(0).toUpperCase() + status.slice(1);
-      }
+    includes: function(array, value) {
+      if (!Array.isArray(array)) return false;
+      return array.some(item => item.toString() === value.toString());
     },
-    truncateText: function(text, length) {
-      if (typeof text !== 'string') return '';
-      if (text.length <= length) return text;
-      return text.substring(0, length) + '...';
+    gte: function(a, b) {
+      return Number(a) >= Number(b);
+    },
+    truncateText: function(text, limit) {
+      var str = text == null ? '' : text.toString();
+      var max = typeof limit === 'number' ? limit : 100;
+      return str.length > max ? str.slice(0, max) + '...' : str;
+    },
+    formatStatus: function(status) {
+      const labels = {
+        pending:            'Pending',
+        approved:           'Approved',
+        rejected:           'Rejected',
+        requested_changes:  'Requested Changes'
+      };
+      return labels[status] || status;
     }
   }
 }));
@@ -90,7 +115,6 @@ app.use('/events', require('./routes/events'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/admin',     require('./routes/admin'));
 app.use('/notifications', require('./routes/notifications'));
-app.use('/reports', require('./routes/reports'));
 
 // --- 404 Wildcard ---
 app.use('*', (req, res) => res.status(404).render('404'));

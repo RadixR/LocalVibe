@@ -4,7 +4,11 @@ const ctrl = require('../controllers/notificationController');
 const { ensureLoggedIn } = require('../middleware/auth');
 
 router.get('/', ensureLoggedIn, ctrl.getNotifications);
-router.post('/:id/mark-read', ensureLoggedIn, ctrl.markAsRead);
-router.post('/mark-all-read', ensureLoggedIn, ctrl.markAllAsRead);
+
+router.post('/:id/delete',    ensureLoggedIn, ctrl.deleteNotification);
+router.post('/delete-all',    ensureLoggedIn, ctrl.deleteAllNotifications);
+
+router.get('/:id/delete',     ensureLoggedIn, ctrl.deleteNotification);
+router.get('/delete-all',     ensureLoggedIn, ctrl.deleteAllNotifications);
 
 module.exports = router; 

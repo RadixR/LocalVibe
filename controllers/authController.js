@@ -2,6 +2,8 @@ const xss       = require('xss');
 const validator = require('validator');
 const User      = require('../models/User');
 
+const serverStartTime = Date.now();
+
 exports.getRegister = (req, res) => res.render('auth/register');
 exports.getLogin    = (req, res) => res.render('auth/login');
 
@@ -26,10 +28,30 @@ exports.postRegister = async (req, res) => {
 
 exports.postLogin = async (req, res) => {
   const { email, password } = req.body;
+  
+  if (!req.session.loginAttempts || !req.session.lastAttemptTime || req.session.lastAttemptTime < serverStartTime) {
+    req.session.loginAttempts = 0;
+    req.session.lastAttemptTime = Date.now();
+  }
+  
+  const timeSinceLastAttempt = Date.now() - (req.session.lastAttemptTime || 0);
+  if (timeSinceLastAttempt > 15 * 60 * 1000) {
+    req.session.loginAttempts = 0;
+  }
+  
+  if (req.session.loginAttempts >= 3) {
+    return res.render('auth/login', { error: 'Too many failed attempts. Please try again in 15 minutes.' });
+  }
+  
   const user = await User.findOne({ email: email.toLowerCase() });
   if (!user || !await user.validatePassword(password)) {
+    req.session.loginAttempts = (req.session.loginAttempts || 0) + 1;
+    req.session.lastAttemptTime = Date.now();
     return res.render('auth/login', { error: 'Invalid credentials.' });
   }
+  
+  req.session.loginAttempts = 0;
+  req.session.lastAttemptTime = null;
   req.session.userId = user._id;
   req.session.isAdmin = user.isAdmin;
   req.session.user = {
@@ -42,5 +64,11 @@ exports.postLogin = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  req.session.destroy(() => res.redirect('/'));
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('Error destroying session:', err);
+    }
+    res.clearCookie('connect.sid');
+    res.redirect('/');
+  });
 }; 

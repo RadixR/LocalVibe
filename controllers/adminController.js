@@ -79,11 +79,12 @@ exports.rejectEvent = async (req, res) => {
     action:    'rejected',
     notes:     req.body.notes || ''
   });
+  const notes = req.body.notes || '';
   await createNotification(
     ev.creatorID,
     'eventRejected',
     req.params.id,
-    'Your event has been rejected.'
+    `Your event has been rejected. Reason: ${notes}`
   );
   res.redirect('/admin/events/pending');
 };
@@ -97,11 +98,12 @@ exports.requestChanges = async (req, res) => {
     action: 'requested_changes',
     notes: req.body.notes || ''
   });
+  const notes = req.body.notes || '';
   await createNotification(
     ev.creatorID,
     'eventChangesRequested',
     req.params.id,
-    'Changes have been requested for your event.'
+    `Changes requested for your event. Details: ${notes}`
   );
   res.redirect('/admin/events/pending');
 }; 

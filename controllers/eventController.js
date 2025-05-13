@@ -7,19 +7,25 @@ const ModerationLog = require('../models/ModerationLog');
 
 exports.listEvents = async (req, res) => {
   const events = await Event.find({ status: 'approved' }).sort('eventDate');
-  const plainEvents = events.map(event => event.toObject());
-  console.log('Events from database:', plainEvents.map(e => ({
-    title: e.title,
-    eventDate: e.eventDate,
-    startTime: e.startTime
-  })));
+  const userId = req.session.userId && req.session.userId.toString();
+  const plainEvents = events.map(event => {
+    const obj = event.toObject();
+    obj.rsvpCount  = obj.rsvpUserIDs.length;
+    obj.hasRSVPed  = userId ? obj.rsvpUserIDs.some(id => id.toString() === userId) : false;
+    obj.isFull     = obj.rsvpCount >= obj.capacity;
+    return obj;
+  });
   res.render('events/index', { events: plainEvents, query: req.query });
 };
 
 exports.showEvent = async (req, res) => {
   const ev = await Event.findById(req.params.id);
   if (!ev || ev.status !== 'approved') return res.status(404).render('404');
+  
   const plainEvent = ev.toObject();
+  const userId = req.session.userId && req.session.userId.toString();
+  plainEvent.hasRSVPed = userId ? plainEvent.rsvpUserIDs.some(id => id.toString() === userId) : false;
+  
   res.render('events/show', { ev: plainEvent, query: req.query });
 };
 
@@ -143,7 +149,7 @@ exports.createEvent = async (req, res) => {
       latitude:    parseFloat(req.body.latitude) || null,
       longitude:   parseFloat(req.body.longitude) || null,
       placeId:     xss(req.body.placeId) || null,
-      eventDate:   new Date(req.body.eventDate),
+      eventDate:   new Date(`${req.body.eventDate}T00:00:00`),
       startTime:   req.body.startTime,
       endTime:     req.body.endTime,
       capacity:    parseInt(req.body.capacity, 10),
@@ -196,18 +202,35 @@ exports.rsvpEvent = async (req, res) => {
   const ev   = await Event.findById(req.params.id);
   const user = await User.findById(req.session.userId);
 
-  const today = new Date();
-  today.setHours(0,0,0,0);
-  if (ev.eventDate < today)
+  if (!user) {
+    return res.redirect('/auth/login');
+  }
+
+  const now = new Date();
+  const eventDateTime = new Date(`${ev.eventDate.toISOString().slice(0,10)}T${ev.startTime}`);
+  if (eventDateTime < now)
     return res.redirect(`/events/${ev._id}?error=Event%20in%20the%20past`);
   if (ev.rsvpUserIDs.length >= ev.capacity)
     return res.redirect(`/events/${ev._id}?error=Event%20full`);
   if (ev.rsvpUserIDs.some(id => id.equals(req.session.userId)))
     return res.redirect(`/events/${ev._id}?error=Already%20RSVPd`);
 
-  const conflict = user.rsvpedEvents.some(r =>
-    new Date(r.eventDate).toDateString() === ev.eventDate.toDateString()
-  );
+  const existing = await Event.find({
+    _id: { $in: user.rsvpedEvents.map(r => r.eventID) },
+    status: 'approved'
+  });
+  const conflict = existing.some(e => {
+    if (e.eventDate.toDateString() !== ev.eventDate.toDateString()) return false;
+    const [sh, sm] = e.startTime.split(':').map(Number);
+    const [eh, em] = e.endTime.split(':').map(Number);
+    const [ns, nm] = ev.startTime.split(':').map(Number);
+    const [ne, nm2] = ev.endTime.split(':').map(Number);
+    const existingStart = new Date(e.eventDate); existingStart.setHours(sh, sm);
+    const existingEnd   = new Date(e.eventDate); existingEnd.setHours(eh, em);
+    const newStart      = new Date(ev.eventDate); newStart.setHours(ns, nm);
+    const newEnd        = new Date(ev.eventDate); newEnd.setHours(ne, nm2);
+    return newStart < existingEnd && newEnd > existingStart;
+  });
   if (conflict)
     return res.redirect(`/events/${ev._id}?error=Overlapping%20event`);
 
@@ -224,7 +247,7 @@ exports.rsvpEvent = async (req, res) => {
   const { createNotification } = require('./notificationController');
   await createNotification(ev.creatorID, 'eventReminder', ev._id, msg);
   
-  res.redirect(`/events/${ev._id}`);
+  res.redirect(`/events/${ev._id}?success=Successfully%20RSVPd`);
 };
 
 exports.bookmarkEvent = async (req, res) => {
@@ -249,4 +272,20 @@ exports.deleteEvent = async (req, res) => {
     ModerationLog.deleteMany({ eventID: req.params.id })
   ]);
   res.redirect('/dashboard');
+};
+
+exports.unrsvpEvent = async (req, res) => {
+  if (!req.session.userId) return res.redirect('/auth/login');
+  const ev   = await Event.findById(req.params.id);
+  const user = await User.findById(req.session.userId);
+
+  if (!user) {
+    return res.redirect('/auth/login');
+  }
+
+  ev.rsvpUserIDs = ev.rsvpUserIDs.filter(id => !id.equals(req.session.userId));
+  user.rsvpedEvents = user.rsvpedEvents.filter(r => !r.eventID.equals(req.params.id));
+  await Promise.all([ev.save(), user.save()]);
+  
+  res.redirect(`/events/${ev._id}?success=Successfully%20cancelled%20RSVP`);
 }; 

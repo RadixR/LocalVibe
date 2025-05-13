@@ -11,10 +11,11 @@ router.get('/new', ensureLoggedIn, ctrl.newEventForm);
 router.post('/', ensureLoggedIn, ctrl.createEvent);
 router.get('/search', ctrl.searchEvents);
 router.get('/:id', ctrl.showEvent);
+router.post('/:id/rsvp', ensureLoggedIn, ctrl.rsvpEvent);
+router.post('/:id/unrsvp', ensureLoggedIn, ctrl.unrsvpEvent);
 router.get('/:id/edit', ensureLoggedIn, editCtrl.getEditForm);
 router.post('/:id/edit', ensureLoggedIn, editCtrl.postEdit);
 router.post('/:id/comments', ensureLoggedIn, ctrl.addComment);
-router.post('/:id/rsvp', ensureLoggedIn, ctrl.rsvpEvent);
 router.post('/:id/bookmark', ensureLoggedIn, ctrl.bookmarkEvent);
 router.post('/:id/delete', ensureLoggedIn, ctrl.deleteEvent);
 

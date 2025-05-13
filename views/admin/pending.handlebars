@@ -10,7 +10,7 @@
           <div class="event-details">
             <p><strong>Created by:</strong> {{#if this.creatorID}}{{this.creatorID.firstName}} {{this.creatorID.lastName}}{{else}}Unknown Creator{{/if}}</p>
             <p><strong>Date:</strong> {{#if this.eventDate}}{{formatDate this.eventDate}}{{else}}Date not set{{/if}}</p>
-            <p><strong>Time:</strong> {{this.startTime}} - {{this.endTime}}</p>
+            <p><strong>Time:</strong> {{formatTime this.startTime}} – {{formatTime this.endTime}}</p>
             <p><strong>Location:</strong> {{this.address}}</p>
             <p><strong>Category:</strong> {{this.category}}</p>
             <p><strong>Capacity:</strong> {{this.capacity}}</p>
