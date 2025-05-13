@@ -89,10 +89,10 @@ app.engine('handlebars', engine({
     gte: function(a, b) {
       return Number(a) >= Number(b);
     },
-    truncateText: function(text, limit) {
-      var str = text == null ? '' : text.toString();
-      var max = typeof limit === 'number' ? limit : 100;
-      return str.length > max ? str.slice(0, max) + '...' : str;
+    truncateText: function(text, length) {
+      if (typeof text !== 'string') return '';
+      if (text.length <= length) return text;
+      return text.substring(0, length) + '...';
     },
     formatStatus: function(status) {
       const labels = {
@@ -102,6 +102,17 @@ app.engine('handlebars', engine({
         requested_changes:  'Requested Changes'
       };
       return labels[status] || status;
+    },
+    getTodayString: function() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    },
+    join: function(array, separator) {
+      if (!Array.isArray(array)) return '';
+      return array.join(separator);
     }
   }
 }));

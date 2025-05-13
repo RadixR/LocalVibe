@@ -12,7 +12,7 @@
   <input type="hidden" name="placeId" id="placeId"> 
   
   <br>
-  <label>Date <input type="date" name="eventDate" required></label><br>
+  <label>Date <input type="date" name="eventDate" required min="{{getTodayString}}"></label><br>
   <label>Start Time <input type="time" name="startTime" required></label><br>
   <label>End Time <input type="time" name="endTime" required></label><br>
   <label>Capacity <input type="number" name="capacity" required></label><br>

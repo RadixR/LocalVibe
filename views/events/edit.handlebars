@@ -1,62 +1,42 @@
 <h2>Edit Event</h2>
+<form method="POST" action="/events/{{event._id}}/edit" id="edit-event-form">
+  <label>Title <input name="title" required value="{{event.title}}"></label><br>
+  <label>Description <textarea name="description" required>{{event.description}}</textarea></label><br>
+  
+  <label for="address-input">Address</label>
+  <input type="text" id="address-input" name="address" required placeholder="Start typing an address..." style="width: 400px;" value="{{event.address}}">
+  
+  <input type="hidden" name="formattedAddress" id="formattedAddress" value="{{event.formattedAddress}}">
+  <input type="hidden" name="latitude" id="latitude" value="{{event.latitude}}">
+  <input type="hidden" name="longitude" id="longitude" value="{{event.longitude}}">
+  <input type="hidden" name="placeId" id="placeId" value="{{event.placeId}}"> 
+  
+  <br>
+  <label>Date <input type="date" name="eventDate" required value="{{formatForInput event.eventDate}}" min="{{getTodayString}}"></label><br>
+  <label>Start Time <input type="time" name="startTime" required value="{{event.startTime}}"></label><br>
+  <label>End Time <input type="time" name="endTime" required value="{{event.endTime}}"></label><br>
+  <label>Capacity <input type="number" name="capacity" required value="{{event.capacity}}"></label><br>
+  <label>Category <select name="category" required>
+    <option value="">Select a category</option>
+    <option value="Music" {{#eq event.category "Music"}}selected{{/eq}}>Music</option>
+    <option value="Technology" {{#eq event.category "Technology"}}selected{{/eq}}>Technology</option>
+    <option value="Food" {{#eq event.category "Food"}}selected{{/eq}}>Food</option>
+    <option value="Sports" {{#eq event.category "Sports"}}selected{{/eq}}>Sports</option>
+    <option value="Arts" {{#eq event.category "Arts"}}selected{{/eq}}>Arts</option>
+  </select></label><br>
+  <label>Tags (comma-separated) <input name="tags" value="{{join event.tags ","}}"></label><br>
+  <label>Ticket Link (optional) <input type="url" name="ticketLink" value="{{event.ticketLink}}"></label><br>
+  <button type="submit">Update Event</button>
+</form>
 
-<form action="/events/{{ev._id}}/edit" method="POST">
-  <div class="form-group">
-    <label for="title">Title</label>
-    <input type="text" class="form-control" id="title" name="title" value="{{ev.title}}" required>
-  </div>
+<script src="/js/address-autocomplete.js"></script>
 
-  <div class="form-group">
-    <label for="description">Description</label>
-    <textarea class="form-control" id="description" name="description" rows="3" required>{{ev.description}}</textarea>
-  </div>
-
-  <div class="form-group">
-    <label for="address">Address</label>
-    <input type="text" class="form-control" id="address" name="address" value="{{ev.address}}" required>
-  </div>
-
-  <div class="form-group">
-    <label for="eventDate">Date</label>
-    <input type="date" class="form-control" id="eventDate" name="eventDate" value="{{ev.eventDate}}" required>
-  </div>
-
-  <div class="form-group">
-    <label for="startTime">Start Time</label>
-    <input type="time" class="form-control" id="startTime" name="startTime" value="{{ev.startTime}}" required>
-  </div>
-
-  <div class="form-group">
-    <label for="endTime">End Time</label>
-    <input type="time" class="form-control" id="endTime" name="endTime" value="{{ev.endTime}}" required>
-  </div>
-
-  <div class="form-group">
-    <label for="capacity">Capacity</label>
-    <input type="number" class="form-control" id="capacity" name="capacity" value="{{ev.capacity}}" required>
-  </div>
-
-  <div class="form-group">
-    <label for="category">Category</label>
-    <select class="form-control" id="category" name="category" required>
-      <option value="Music" {{#if (eq ev.category "Music")}}selected{{/if}}>Music</option>
-      <option value="Technology" {{#if (eq ev.category "Technology")}}selected{{/if}}>Technology</option>
-      <option value="Food" {{#if (eq ev.category "Food")}}selected{{/if}}>Food</option>
-      <option value="Sports" {{#if (eq ev.category "Sports")}}selected{{/if}}>Sports</option>
-      <option value="Arts" {{#if (eq ev.category "Arts")}}selected{{/if}}>Arts</option>
-    </select>
-  </div>
-
-  <div class="form-group">
-    <label for="tags">Tags (comma-separated)</label>
-    <input type="text" class="form-control" id="tags" name="tags" value="{{ev.tags}}" required>
-  </div>
-
-  <div class="form-group">
-    <label for="ticketLink">Ticket Link (optional)</label>
-    <input type="url" class="form-control" id="ticketLink" name="ticketLink" value="{{ev.ticketLink}}">
-  </div>
-
-  <button type="submit" class="btn btn-primary">Submit Edit for Review</button>
-  <a href="/events/{{ev._id}}" class="btn btn-secondary">Cancel</a>
-</form> 
+{{#if googleApiKey}}
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{googleApiKey}}&libraries=places&callback=initAutocomplete"></script>
+{{else}}
+<script>
+  console.warn('Google API Key not found. Address autocomplete will not work.');
+  document.getElementById('address-input').disabled = true;
+  document.getElementById('address-input').placeholder = 'Address autocomplete disabled (API key missing)';
+</script>
+{{/if}} 

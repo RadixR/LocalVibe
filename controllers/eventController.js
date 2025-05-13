@@ -288,4 +288,93 @@ exports.unrsvpEvent = async (req, res) => {
   await Promise.all([ev.save(), user.save()]);
   
   res.redirect(`/events/${ev._id}?success=Successfully%20cancelled%20RSVP`);
+};
+
+exports.editEventForm = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.redirect('/auth/login');
+    }
+
+    const eventToEdit = await Event.findById(req.params.id);
+
+    if (!eventToEdit) {
+      return res.status(404).render('404');
+    }
+
+    if (eventToEdit.creatorID.toString() !== req.session.userId.toString()) {
+      return res.status(403).render('403'); 
+    }
+
+    res.render('events/edit', {
+      title: 'Edit Event',
+      event: eventToEdit.toObject(),
+      googleApiKey: process.env.GOOGLE_PLACES_API_KEY
+    });
+
+  } catch (error) {
+    console.error('Error fetching event for edit:', error);
+    res.status(500).render('error', { message: 'Error loading event for editing.' });
+  }
+};
+
+exports.updateEvent = async (req, res) => {
+  try {
+    if (!req.session.userId) {
+      return res.redirect('/auth/login');
+    }
+
+    const eventId = req.params.id;
+    const eventToUpdate = await Event.findById(eventId);
+
+    if (!eventToUpdate) {
+      return res.status(404).render('404');
+    }
+
+    if (eventToUpdate.creatorID.toString() !== req.session.userId.toString()) {
+      return res.status(403).render('403'); // Forbidden
+    }
+
+    const updatedData = {
+      title:       xss(req.body.title),
+      description: xss(req.body.description),
+      address:     xss(req.body.address),
+      formattedAddress: xss(req.body.formattedAddress),
+      latitude:    parseFloat(req.body.latitude) || null,
+      longitude:   parseFloat(req.body.longitude) || null,
+      placeId:     xss(req.body.placeId) || null,
+      eventDate:   new Date(`${req.body.eventDate}T00:00:00Z`),
+      startTime:   req.body.startTime,
+      endTime:     req.body.endTime,
+      capacity:    parseInt(req.body.capacity, 10),
+      category:    xss(req.body.category),
+      tags:        req.body.tags ? req.body.tags.split(',').map(t => xss(t.trim())) : [],
+      ticketLink:  xss(req.body.ticketLink || ''),
+      status:      'pending'
+    };
+
+
+    const updatedEvent = await Event.findByIdAndUpdate(eventId, updatedData, { new: true });
+
+    console.log(`Event ${updatedEvent._id} updated by user ${req.session.userId}. Status reset to pending.`);
+
+
+    res.render('notifications/generic', {
+        title: 'Event Updated',
+        message: 'Your event has been updated and re-submitted for approval. You can check its status on your dashboard.',
+        returnLink: '/dashboard'
+    });
+
+  } catch (error) {
+    console.error('Error updating event:', error);
+
+    const eventDataForForm = req.body; 
+    eventDataForForm._id = req.params.id;
+    res.status(500).render('events/edit', {
+      title: 'Edit Event',
+      error: 'Error updating event. Please check your input and try again.',
+      event: eventDataForForm, 
+      googleApiKey: process.env.GOOGLE_PLACES_API_KEY
+    });
+  }
 }; 

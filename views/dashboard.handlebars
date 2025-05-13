@@ -9,8 +9,11 @@
       <a href="/events/{{this._id}}">{{this.title}}</a>
       <span>on {{formatDate this.eventDate}} at {{formatTime this.startTime}}</span>
       <span class="status-{{this.status}}">Status: {{formatStatus this.status}}</span>
-      <form method="POST" action="/events/{{this._id}}/delete" style="display:inline; margin-left:1rem">
-        <button type="submit">Delete</button>
+      <form method="GET" action="/events/{{this._id}}/edit" style="display:inline; margin-left:1rem;">
+        <button type="submit" class="btn btn-sm btn-secondary">Edit</button>
+      </form>
+      <form method="POST" action="/events/{{this._id}}/delete" style="display:inline; margin-left:0.5rem">
+        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
       </form>
     </li>
   {{else}}
