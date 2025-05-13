@@ -15,9 +15,16 @@ const UserSchema = new mongoose.Schema({
   createdEvents:        [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
   rsvpedEvents:         [{
     eventID: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+    eventDate: { type: Date, required: true },
     rsvpTime: { type: Date, default: Date.now }
   }],
-  bookmarkedEvents:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }]
+  bookmarkedEvents:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+  interests:            [String],
+  preferredCategories:  [String],
+  notificationPreferences: {
+    emailAlerts: { type: Boolean, default: true },
+    appAlerts:   { type: Boolean, default: true }
+  }
 });
 
 UserSchema.statics.hashPassword = async function(password) {

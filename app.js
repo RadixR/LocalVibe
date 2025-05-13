@@ -53,8 +53,30 @@ app.engine('handlebars', engine({
         day: 'numeric'
       });
     },
+    formatForInput: function(date) {
+      const d = new Date(date);
+      return isNaN(d) ? '' : d.toISOString().slice(0,10);
+    },
     eq: function(a, b) {
+      if (typeof a === 'undefined' || typeof b === 'undefined') {
+        return false; 
+      }
       return a.toString() === b.toString();
+    },
+    formatStatus: function(status) {
+      if (!status) return '';
+      switch (status) {
+        case 'pending': return 'Pending Approval';
+        case 'approved': return 'Approved';
+        case 'rejected': return 'Rejected';
+        case 'requested_changes': return 'Changes Requested';
+        default: return status.charAt(0).toUpperCase() + status.slice(1);
+      }
+    },
+    truncateText: function(text, length) {
+      if (typeof text !== 'string') return '';
+      if (text.length <= length) return text;
+      return text.substring(0, length) + '...';
     }
   }
 }));
@@ -68,9 +90,10 @@ app.use('/events', require('./routes/events'));
 app.use('/dashboard', require('./routes/dashboard'));
 app.use('/admin',     require('./routes/admin'));
 app.use('/notifications', require('./routes/notifications'));
+app.use('/reports', require('./routes/reports'));
 
 // --- 404 Wildcard ---
-app.use('*', (req, res) => res.sendStatus(404));
+app.use('*', (req, res) => res.status(404).render('404'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`LocalVibe listening on port ${PORT}`)); 

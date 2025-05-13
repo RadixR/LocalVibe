@@ -32,6 +32,12 @@ exports.postLogin = async (req, res) => {
   }
   req.session.userId = user._id;
   req.session.isAdmin = user.isAdmin;
+  req.session.user = {
+    id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    isAdmin: user.isAdmin
+  };
   res.redirect('/');
 };
 

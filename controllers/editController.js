@@ -4,15 +4,14 @@ const EventEdit = require('../models/EventEdit');
 
 exports.getEditForm = async (req, res) => {
   const ev = await Event.findById(req.params.id);
-  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.sendStatus(403);
+  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.status(403).render('403');
   res.render('events/edit', { ev });
 };
 
 exports.postEdit = async (req, res) => {
   const ev = await Event.findById(req.params.id);
-  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.sendStatus(403);
+  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.status(403).render('403');
 
-  // Capture previous and updated
   const prev = {
     title: ev.title,
     description: ev.description,
@@ -29,7 +28,7 @@ exports.postEdit = async (req, res) => {
     title: xss(req.body.title),
     description: xss(req.body.description),
     address: xss(req.body.address),
-    eventDate: req.body.eventDate,
+    eventDate: new Date(req.body.eventDate),
     startTime: req.body.startTime,
     endTime: req.body.endTime,
     capacity: parseInt(req.body.capacity,10),
@@ -38,5 +37,5 @@ exports.postEdit = async (req, res) => {
     ticketLink: xss(req.body.ticketLink||'')
   };
   await EventEdit.create({ eventID: ev._id, previousData: prev, updatedData: upd });
-  res.redirect('/events/'+ev._id);
+  res.redirect('/events/'+ev._id+'?msg=Edit%20submitted%20for%20review');
 }; 

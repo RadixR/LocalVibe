@@ -1,12 +1,20 @@
 <h2>Create New Event</h2>
-<form method="POST" action="/events">
+<form method="POST" action="/events" id="create-event-form">
   <label>Title <input name="title" required></label><br>
   <label>Description <textarea name="description" required></textarea></label><br>
-  <label>Address <input name="address" required placeholder="123 Main St, Hoboken, NJ"></label><br>
+  
+  <label for="address-input">Address</label>
+  <input type="text" id="address-input" name="address" required placeholder="Start typing an address..." style="width: 400px;">
+  
+  <input type="hidden" name="formattedAddress" id="formattedAddress">
+  <input type="hidden" name="latitude" id="latitude">
+  <input type="hidden" name="longitude" id="longitude">
+  <input type="hidden" name="placeId" id="placeId"> 
+  
+  <br>
   <label>Date <input type="date" name="eventDate" required></label><br>
   <label>Start Time <input type="time" name="startTime" required></label><br>
   <label>End Time <input type="time" name="endTime" required></label><br>
-  <label>Location (optional) <input name="location"></label><br>
   <label>Capacity <input type="number" name="capacity" required></label><br>
   <label>Category <select name="category" required>
     <option value="">Select a category</option>
@@ -19,4 +27,17 @@
   <label>Tags (comma-separated) <input name="tags"></label><br>
   <label>Ticket Link (optional) <input type="url" name="ticketLink"></label><br>
   <button type="submit">Submit for Approval</button>
-</form> 
+</form>
+
+<script src="/js/address-autocomplete.js"></script>
+
+{{#if googleApiKey}}
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{googleApiKey}}&libraries=places&callback=initAutocomplete"></script>
+{{else}}
+<script>
+  console.warn('Google API Key not found. Address autocomplete will not work.');
+  document.getElementById('address-input').disabled = true;
+  document.getElementById('address-input').placeholder = 'Address autocomplete disabled (API key missing)';
+</script>
+{{/if}}
+

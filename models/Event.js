@@ -12,10 +12,13 @@ const EventSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
   description: { type: String, required: true },
   address: { type: String, required: true, trim: true },
+  formattedAddress: { type: String, trim: true },
+  latitude: { type: Number },
+  longitude: { type: Number },
+  placeId: { type: String },
   eventDate: { type: Date, required: true },
   startTime: { type: String, required: true },
   endTime: { type: String, required: true },
-  location: { type: String, trim: true },
   capacity: { type: Number, required: true },
   category: { type: String, required: true },
   tags: [String],
@@ -26,7 +29,6 @@ const EventSchema = new mongoose.Schema({
   postedDate: { type: Date, default: Date.now }
 });
 
-// Full-text search on title & description
 EventSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('Event', EventSchema); 

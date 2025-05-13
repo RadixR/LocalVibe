@@ -1,0 +1,49 @@
+<div class="search-filters mb-4 p-3 border rounded">
+  <form method="GET" action="{{searchAction}}">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label for="keyword" class="form-label">Keyword</label>
+        <input id="keyword" name="keyword" placeholder="Search title or description" value="{{query.keyword}}" class="form-control">
+      </div>
+      <div class="col-md-6">
+        <label for="location" class="form-label">Location (contains)</label>
+        <input id="location" name="location" placeholder="Address contains..." value="{{query.location}}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label for="dateFrom" class="form-label">Date From</label>
+        <input id="dateFrom" type="date" name="dateFrom" value="{{query.dateFrom}}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label for="dateTo" class="form-label">Date To</label>
+        <input id="dateTo" type="date" name="dateTo" value="{{query.dateTo}}" class="form-control">
+      </div>
+      <div class="col-md-3">
+        <label for="category" class="form-label">Category</label>
+        <select id="category" name="category" class="form-select">
+          <option value="" {{#unless query.category}}selected{{/unless}}>Any Category</option>
+          <option value="Music" {{#eq query.category 'Music'}}selected{{/eq}}>Music</option>
+          <option value="Technology" {{#eq query.category 'Technology'}}selected{{/eq}}>Technology</option>
+          <option value="Food" {{#eq query.category 'Food'}}selected{{/eq}}>Food</option>
+          <option value="Sports" {{#eq query.category 'Sports'}}selected{{/eq}}>Sports</option>
+          <option value="Arts" {{#eq query.category 'Arts'}}selected{{/eq}}>Arts</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="tag" class="form-label">Tag</label>
+        <input id="tag" name="tag" placeholder="Has tag..." value="{{query.tag}}" class="form-control">
+      </div>
+      <div class="col-md-3 align-self-end">
+        <label for="sortBy" class="form-label">Sort By</label>
+        <select id="sortBy" name="sortBy" class="form-select">
+          <option value="dateAsc" {{#eq query.sortBy 'dateAsc'}}selected{{/eq}}>Date (Oldest First)</option>
+          <option value="dateDesc" {{#eq query.sortBy 'dateDesc'}}selected{{/eq}}>Date (Newest First)</option>
+          <option value="titleAsc" {{#eq query.sortBy 'titleAsc'}}selected{{/eq}}>Title (A-Z)</option>
+        </select>
+      </div>
+      <div class="col-md-3 align-self-end d-flex justify-content-start gap-2">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="{{clearAction}}" class="btn btn-secondary">Clear</a>
+      </div>
+    </div>
+  </form>
+</div>

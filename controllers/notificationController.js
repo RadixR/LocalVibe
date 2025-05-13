@@ -8,7 +8,10 @@ exports.getNotifications = async (req, res) => {
 };
 
 exports.markAsRead = async (req, res) => {
-  await Notification.findByIdAndUpdate(req.params.id, { isRead: true });
+  await Notification.updateOne(
+    { _id: req.params.id, userID: req.session.userId },
+    { isRead: true }
+  );
   res.redirect('/notifications');
 };
 
@@ -18,4 +21,13 @@ exports.markAllAsRead = async (req, res) => {
     { isRead: true }
   );
   res.redirect('/notifications');
+};
+
+exports.createNotification = async (userID, type, eventID, message) => {
+  await Notification.create({
+    userID,
+    type,
+    eventID,
+    message
+  });
 }; 

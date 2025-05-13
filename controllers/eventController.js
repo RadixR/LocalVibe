@@ -1,81 +1,177 @@
 const xss   = require('xss');
 const Event = require('../models/Event');
 const User  = require('../models/User');
+const EventEdit = require('../models/EventEdit');
+const Notification = require('../models/Notification');
+const ModerationLog = require('../models/ModerationLog');
 
-// List all approved events
 exports.listEvents = async (req, res) => {
   const events = await Event.find({ status: 'approved' }).sort('eventDate');
   const plainEvents = events.map(event => event.toObject());
+  console.log('Events from database:', plainEvents.map(e => ({
+    title: e.title,
+    eventDate: e.eventDate,
+    startTime: e.startTime
+  })));
   res.render('events/index', { events: plainEvents, query: req.query });
 };
 
-// Show a single event's detail
 exports.showEvent = async (req, res) => {
   const ev = await Event.findById(req.params.id);
-  if (!ev || ev.status !== 'approved') return res.sendStatus(404);
+  if (!ev || ev.status !== 'approved') return res.status(404).render('404');
   const plainEvent = ev.toObject();
   res.render('events/show', { ev: plainEvent, query: req.query });
 };
 
-// Render map view data
 exports.mapView = async (req, res) => {
   try {
-    const events = await Event.find({ status: 'approved' });
-    const data = events.map(e => ({
+    const { keyword, category, tag, dateFrom, dateTo, location, sortBy } = req.query;
+    const q = { status: 'approved' };
+    
+    if (keyword)  q.$text       = { $search: keyword };
+    if (category) q.category    = category;
+    if (tag)      q.tags        = tag;
+    if (location) q.address     = new RegExp(location, 'i');
+    if (dateFrom || dateTo) q.eventDate = {};
+    if (dateFrom) q.eventDate.$gte = new Date(dateFrom);
+    if (dateTo)   q.eventDate.$lte = new Date(dateTo);
+    
+    let sortOption = {};
+    switch (sortBy) {
+      case 'dateDesc':
+        sortOption = { eventDate: -1 };
+        break;
+      case 'titleAsc':
+        sortOption = { title: 1 };
+        break;
+      case 'dateAsc':
+      default:
+        sortOption = { eventDate: 1 };
+        break;
+    }
+    
+    const events = await Event.find(q)
+                             .select('_id title address eventDate startTime description latitude longitude')
+                             .sort(sortOption);
+
+    const plainEvents = events.map(e => e.toObject());
+
+    const mapData = plainEvents.map(e => ({
       _id: e._id,
       title: e.title,
-      address: e.address
+      address: e.address,
+      lat: e.latitude,
+      lng: e.longitude
     }));
-    res.render('events/map', { events: JSON.stringify(data) });
-  } catch {
-    res.render('events/map', { events: '[]' });
+    
+    console.log('Events for map & list view (filtered/sorted):', plainEvents.length);
+    
+    res.render('events/map', { 
+      events: plainEvents,             
+      mapDataJson: JSON.stringify(mapData), 
+      googleApiKey: process.env.GOOGLE_PLACES_API_KEY,
+      query: req.query
+    });
+  } catch (error) {
+    console.error('Error fetching events for map:', error);
+   
+    res.render('events/map', { 
+      events: [], 
+      mapDataJson: '[]', 
+      googleApiKey: process.env.GOOGLE_PLACES_API_KEY,
+      query: req.query
+    });
   }
 };
 
-// Search & filter events
 exports.searchEvents = async (req, res) => {
-  const { keyword, category, tag, dateFrom, dateTo, location } = req.query;
+  const { keyword, category, tag, dateFrom, dateTo, location, sortBy } = req.query;
   const q = { status: 'approved' };
+  
   if (keyword)  q.$text       = { $search: keyword };
   if (category) q.category    = category;
   if (tag)      q.tags        = tag;
   if (location) q.address     = new RegExp(location, 'i');
-  if (dateFrom||dateTo) q.eventDate = {};
+  if (dateFrom || dateTo) q.eventDate = {};
   if (dateFrom) q.eventDate.$gte = new Date(dateFrom);
   if (dateTo)   q.eventDate.$lte = new Date(dateTo);
-  const events = await Event.find(q).sort('eventDate');
-  res.render('events/index', { events, query: req.query });
+  
+  let sortOption = {};
+  switch (sortBy) {
+    case 'dateDesc':
+      sortOption = { eventDate: -1 };
+      break;
+    case 'titleAsc':
+      sortOption = { title: 1 };
+      break;
+    case 'dateAsc':
+    default:
+      sortOption = { eventDate: 1 };
+      break;
+  }
+  
+  try {
+    const events = await Event.find(q).sort(sortOption); 
+    const plain = events.map(e => e.toObject());
+    res.render('events/index', { events: plain, query: req.query }); 
+  } catch (error) {
+      console.error('Error searching events:', error);
+      res.status(500).render('error', { message: 'Error performing search' });
+  }
 };
 
-// Show "create new event" form
 exports.newEventForm = (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
-  res.render('events/new');
+  console.log('Google API Key from process.env:', process.env.GOOGLE_PLACES_API_KEY);
+  res.render('events/new', {
+    googleApiKey: process.env.GOOGLE_PLACES_API_KEY
+  });
 };
 
-// Handle new event submission
 exports.createEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   
   try {
+    console.log('Creating event with creator ID:', req.session.userId);
+    
     const data = {
       creatorID:   req.session.userId,
       title:       xss(req.body.title),
       description: xss(req.body.description),
       address:     xss(req.body.address),
+      formattedAddress: xss(req.body.formattedAddress),
+      latitude:    parseFloat(req.body.latitude) || null,
+      longitude:   parseFloat(req.body.longitude) || null,
+      placeId:     xss(req.body.placeId) || null,
       eventDate:   new Date(req.body.eventDate),
       startTime:   req.body.startTime,
       endTime:     req.body.endTime,
-      location:    xss(req.body.location || ''),
       capacity:    parseInt(req.body.capacity, 10),
       category:    xss(req.body.category),
-      tags:        (req.body.tags || '').split(',').filter(Boolean).map(t => xss(t.trim())),
+      tags:        req.body.tags ? req.body.tags.split(',').map(t => xss(t.trim())) : [],
       ticketLink:  xss(req.body.ticketLink || '')
     };
 
     const event = await Event.create(data);
-    res.redirect('/events');
+    console.log('Created event with status:', event.status, {
+      id: event._id,
+      title: event.title,
+      creatorID: event.creatorID,
+      address: event.address,
+      formattedAddress: event.formattedAddress,
+      latitude: event.latitude,
+      longitude: event.longitude,
+      placeId: event.placeId
+    });
+    
+    res.status(201).render('notifications/generic', {
+        title: 'Event Submitted',
+        message: 'Thank you for submitting your event! Our moderation team will review it shortly. You can check its status on your dashboard.',
+        returnLink: '/dashboard'
+    });
+
   } catch (error) {
+    console.error('Error creating event:', error);
     res.render('events/new', { 
       error: 'Error creating event. Please make sure all required fields are filled out correctly.',
       formData: req.body
@@ -83,7 +179,6 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-// Add a comment to an event
 exports.addComment = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   const ev = await Event.findById(req.params.id);
@@ -96,49 +191,62 @@ exports.addComment = async (req, res) => {
   res.redirect(`/events/${ev._id}`);
 };
 
-// RSVP to an event with integrity checks
 exports.rsvpEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   const ev   = await Event.findById(req.params.id);
   const user = await User.findById(req.session.userId);
 
-  if (ev.eventDate < new Date())
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (ev.eventDate < today)
     return res.redirect(`/events/${ev._id}?error=Event%20in%20the%20past`);
   if (ev.rsvpUserIDs.length >= ev.capacity)
     return res.redirect(`/events/${ev._id}?error=Event%20full`);
-  if (ev.rsvpUserIDs.includes(req.session.userId))
+  if (ev.rsvpUserIDs.some(id => id.equals(req.session.userId)))
     return res.redirect(`/events/${ev._id}?error=Already%20RSVPd`);
 
   const conflict = user.rsvpedEvents.some(r =>
-    new Date(r.rsvpTime).toDateString() === ev.eventDate.toDateString()
+    new Date(r.eventDate).toDateString() === ev.eventDate.toDateString()
   );
   if (conflict)
     return res.redirect(`/events/${ev._id}?error=Overlapping%20event`);
 
   ev.rsvpUserIDs.push(req.session.userId);
-  user.rsvpedEvents.push({ eventID: ev._id, rsvpTime: new Date() });
+  user.rsvpedEvents.push({
+    eventID: ev._id,
+    eventDate: ev.eventDate,
+    rsvpTime: new Date()
+  });
   await ev.save();
   await user.save();
+  
+  const msg = `${req.session.user.firstName} RSVP'd to your event "${ev.title}"`;
+  const { createNotification } = require('./notificationController');
+  await createNotification(ev.creatorID, 'eventReminder', ev._id, msg);
+  
   res.redirect(`/events/${ev._id}`);
 };
 
-// Bookmark an event
 exports.bookmarkEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   const user = await User.findById(req.session.userId);
   const id   = req.params.id;
-  if (!user.bookmarkedEvents.includes(id)) {
+  if (!user.bookmarkedEvents.some(id => id.equals(req.params.id))) {
     user.bookmarkedEvents.push(id);
     await user.save();
   }
   res.redirect(`/events/${id}`);
 };
 
-// Delete event by its author
 exports.deleteEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   const ev = await Event.findById(req.params.id);
-  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.sendStatus(403);
+  if (!ev || !ev.creatorID.equals(req.session.userId)) return res.status(403).render('403');
   await Event.findByIdAndDelete(req.params.id);
+  await Promise.all([
+    EventEdit.deleteMany({ eventID: req.params.id }),
+    Notification.deleteMany({ eventID: req.params.id }),
+    ModerationLog.deleteMany({ eventID: req.params.id })
+  ]);
   res.redirect('/dashboard');
 }; 
