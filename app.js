@@ -130,5 +130,17 @@ app.use('/notifications', require('./routes/notifications'));
 // --- 404 Wildcard ---
 app.use('*', (req, res) => res.status(404).render('404'));
 
+// --- Global error handler ---
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (req.get('Accept') === 'application/json') {
+    return res.status(err.status || 500).json({ error: err.message });
+  }
+  res.status(err.status || 500).render('error', {
+    message: err.message,
+    error:   process.env.NODE_ENV === 'production' ? {} : err.stack
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`LocalVibe listening on port ${PORT}`)); 

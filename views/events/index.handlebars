@@ -38,6 +38,35 @@
   {{/each}}
 </ul>
 
+{{#if suggestedEvents.length}}
+  <hr>
+  <h3>Suggested {{#if (eq suggestedEvents.length 1)}}Event{{else}}Events{{/if}} Based on Your Interest in {{suggestedCategory}}</h3>
+  <ul class="list-unstyled">
+    {{#each suggestedEvents}}
+      <li class="event-list-item mb-3 p-3 border rounded" data-event-id="{{this._id}}">
+        <h5>{{this.title}}</h5>
+        <p><small>{{formatDate this.eventDate}} at {{formatTime this.startTime}}</small></p>
+        <p><small>RSVPs: {{this.rsvpCount}}/{{this.capacity}}</small></p>
+        {{#if session.userId}}
+          <div>
+            {{#if this.hasRSVPed}}
+              <p class="text-success mb-2">You are attending this event</p>
+            {{else}}
+              {{#unless this.isFull}}
+                <form method="POST" action="/events/{{this._id}}/rsvp">
+                  <button type="submit" class="btn btn-primary">RSVP Now</button>
+                </form>
+              {{else}}
+                <p class="text-danger">This event is at capacity</p>
+              {{/unless}}
+            {{/if}}
+          </div>
+        {{/if}}
+      </li>
+    {{/each}}
+  </ul>
+{{/if}}
+
 <script src="/js/home-events.js"></script>
 
 <style>

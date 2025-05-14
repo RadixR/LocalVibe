@@ -15,7 +15,52 @@ exports.listEvents = async (req, res) => {
     obj.isFull     = obj.rsvpCount >= obj.capacity;
     return obj;
   });
-  res.render('events/index', { events: plainEvents, query: req.query });
+
+  let suggestedCategory = null;
+  let suggestedEvents  = [];
+
+  if (req.session.userId) {
+    const user = await User.findById(req.session.userId)
+      .populate('rsvpedEvents.eventID', 'category');
+    const counts = {};
+    user.rsvpedEvents.forEach(r => {
+      if (r.eventID?.category) {
+        counts[r.eventID.category] = (counts[r.eventID.category] || 0) + 1;
+      }
+    });
+    suggestedCategory = Object.keys(counts)
+      .sort((a, b) => counts[b] - counts[a])[0];
+    if (suggestedCategory) {
+      const matches = await Event.find({
+        category: suggestedCategory,
+        status:   'approved',
+        _id: { $nin: user.rsvpedEvents.map(r => r.eventID) }
+      })
+      .sort('eventDate')
+      .limit(5)
+      .lean();
+
+      suggestedEvents = matches.map(e => ({
+        ...e,
+        rsvpCount: e.rsvpUserIDs.length,
+        hasRSVPed: req.session.userId
+          ? e.rsvpUserIDs.some(id => id.toString() === req.session.userId)
+          : false,
+        isFull: e.rsvpUserIDs.length >= e.capacity
+      }));
+
+      if (suggestedEvents.length === 0) {
+        suggestedCategory = null;
+      }
+    }
+  }
+
+  res.render('events/index', {
+    events:            plainEvents,
+    query:             req.query,
+    suggestedEvents,
+    suggestedCategory
+  });
 };
 
 exports.showEvent = async (req, res) => {
@@ -70,8 +115,6 @@ exports.mapView = async (req, res) => {
       lng: e.longitude
     }));
     
-    console.log('Events for map & list view (filtered/sorted):', plainEvents.length);
-    
     res.render('events/map', { 
       events: plainEvents,             
       mapDataJson: JSON.stringify(mapData), 
@@ -79,8 +122,6 @@ exports.mapView = async (req, res) => {
       query: req.query
     });
   } catch (error) {
-    console.error('Error fetching events for map:', error);
-   
     res.render('events/map', { 
       events: [], 
       mapDataJson: '[]', 
@@ -128,7 +169,6 @@ exports.searchEvents = async (req, res) => {
 
 exports.newEventForm = (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
-  console.log('Google API Key from process.env:', process.env.GOOGLE_PLACES_API_KEY);
   res.render('events/new', {
     googleApiKey: process.env.GOOGLE_PLACES_API_KEY
   });
@@ -138,8 +178,6 @@ exports.createEvent = async (req, res) => {
   if (!req.session.userId) return res.redirect('/auth/login');
   
   try {
-    console.log('Creating event with creator ID:', req.session.userId);
-    
     const data = {
       creatorID:   req.session.userId,
       title:       xss(req.body.title),
@@ -158,17 +196,16 @@ exports.createEvent = async (req, res) => {
       ticketLink:  xss(req.body.ticketLink || '')
     };
 
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    if (data.eventDate < today) {
+      return res.render('events/new', {
+        error:    'Event date cannot be in the past.',
+        formData: req.body
+      });
+    }
+
     const event = await Event.create(data);
-    console.log('Created event with status:', event.status, {
-      id: event._id,
-      title: event.title,
-      creatorID: event.creatorID,
-      address: event.address,
-      formattedAddress: event.formattedAddress,
-      latitude: event.latitude,
-      longitude: event.longitude,
-      placeId: event.placeId
-    });
     
     res.status(201).render('notifications/generic', {
         title: 'Event Submitted',
@@ -177,7 +214,6 @@ exports.createEvent = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error creating event:', error);
     res.render('events/new', { 
       error: 'Error creating event. Please make sure all required fields are filled out correctly.',
       formData: req.body
@@ -185,16 +221,32 @@ exports.createEvent = async (req, res) => {
   }
 };
 
-exports.addComment = async (req, res) => {
-  if (!req.session.userId) return res.redirect('/auth/login');
-  const ev = await Event.findById(req.params.id);
-  ev.comments.push({
-    userID:  req.session.userId,
-    name:    xss(req.body.name || 'Anonymous'),
-    comment: xss(req.body.comment)
-  });
-  await ev.save();
-  res.redirect(`/events/${ev._id}`);
+exports.addComment = async (req, res, next) => {
+  try {
+    const ev = await Event.findById(req.params.id);
+    if (!ev) return res.status(404).json({ error: 'Event not found.' });
+
+    const name    = xss(req.body.name || '').trim();
+    const comment = xss(req.body.comment || '').trim();
+    if (!name || !comment) {
+      return res.status(400).json({ error: 'Name and comment cannot be empty.' });
+    }
+
+    ev.comments.push({ userID: req.session.userId, name, comment });
+    await ev.save();
+
+    const saved = ev.comments[ev.comments.length - 1];
+    if (req.get('Accept') === 'application/json') {
+      return res.json({
+        name:      saved.name,
+        comment:   saved.comment,
+        timestamp: saved.timestamp.toLocaleString()
+      });
+    }
+    res.redirect(`/events/${ev._id}`);
+  } catch (err) {
+    next(err);
+  }
 };
 
 exports.rsvpEvent = async (req, res) => {
@@ -313,7 +365,6 @@ exports.editEventForm = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching event for edit:', error);
     res.status(500).render('error', { message: 'Error loading event for editing.' });
   }
 };
@@ -332,7 +383,7 @@ exports.updateEvent = async (req, res) => {
     }
 
     if (eventToUpdate.creatorID.toString() !== req.session.userId.toString()) {
-      return res.status(403).render('403'); // Forbidden
+      return res.status(403).render('403'); 
     }
 
     const updatedData = {
@@ -343,7 +394,7 @@ exports.updateEvent = async (req, res) => {
       latitude:    parseFloat(req.body.latitude) || null,
       longitude:   parseFloat(req.body.longitude) || null,
       placeId:     xss(req.body.placeId) || null,
-      eventDate:   new Date(`${req.body.eventDate}T00:00:00Z`),
+      eventDate:   new Date(`${req.body.eventDate}T00:00:00`),
       startTime:   req.body.startTime,
       endTime:     req.body.endTime,
       capacity:    parseInt(req.body.capacity, 10),

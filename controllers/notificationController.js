@@ -14,9 +14,9 @@ exports.getNotifications = async (req, res) => {
     .map(r => {
       const ev = r.eventID;
       if (!ev) return null;
-      const dt = new Date(
-        ev.eventDate.toISOString().slice(0,10) + 'T' + ev.startTime
-      );
+      const [h, m] = ev.startTime.split(':').map(Number);
+      const dt = new Date(ev.eventDate);
+      dt.setHours(h, m, 0, 0);
       return dt > now
         ? {
             _id:       ev._id,

@@ -42,7 +42,7 @@
   {{/if}}
 
   <h3 class="mt-4">Comments</h3>
-  <ul class="list-unstyled">
+  <ul class="comments-list list-unstyled">
     {{#each ev.comments}}
       <li class="mb-3 p-2 border rounded">
         <strong>{{this.name}}</strong> 
@@ -51,13 +51,13 @@
       </li>
     {{/each}}
   </ul>
-  <form method="POST" action="/events/{{ev._id}}/comments" class="mt-3">
-    <div class="form-group">
-      <input name="name" required placeholder="Your name" class="form-control mb-2">
-      <textarea name="comment" required placeholder="Your comment" class="form-control mb-2"></textarea>
-      <button type="submit" class="btn btn-secondary">Post Comment</button>
-    </div>
+  <form id="comment-form">
+    <input name="name" required placeholder="Your name" class="form-control mb-2">
+    <textarea name="comment" required placeholder="Your comment" class="form-control mb-2"></textarea>
+    <button type="submit" class="btn btn-secondary">Post Comment</button>
+    <p id="comment-error" class="text-danger mt-2" style="display:none;"></p>
   </form>
+  <script src="/js/comment-ajax.js"></script>
 {{/if}}
 
 <style>

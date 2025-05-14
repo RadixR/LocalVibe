@@ -17,7 +17,7 @@
   <label>End Time <input type="time" name="endTime" required value="{{event.endTime}}"></label><br>
   <label>Capacity <input type="number" name="capacity" required value="{{event.capacity}}"></label><br>
   <label>Category <select name="category" required>
-    <option value="">Select a category</option>
+    <option value="" disabled {{#unless event.category}}selected{{/unless}}>Select a category</option>
     <option value="Music" {{#eq event.category "Music"}}selected{{/eq}}>Music</option>
     <option value="Technology" {{#eq event.category "Technology"}}selected{{/eq}}>Technology</option>
     <option value="Food" {{#eq event.category "Food"}}selected{{/eq}}>Food</option>

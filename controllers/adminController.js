@@ -29,7 +29,6 @@ exports.pendingEvents = async (req, res) => {
     console.log('Pending events found:', plainEvents.length);
     console.log('Raw pending events data:', JSON.stringify(plainEvents, null, 2));
     
-    // Log each event's key fields
     plainEvents.forEach((event, index) => {
       console.log(`\nEvent ${index + 1}:`);
       console.log('Title:', event.title);
