@@ -22,36 +22,42 @@ exports.listEvents = async (req, res) => {
   if (req.session.userId) {
     const user = await User.findById(req.session.userId)
       .populate('rsvpedEvents.eventID', 'category');
-    const counts = {};
-    user.rsvpedEvents.forEach(r => {
-      if (r.eventID?.category) {
-        counts[r.eventID.category] = (counts[r.eventID.category] || 0) + 1;
-      }
-    });
-    suggestedCategory = Object.keys(counts)
-      .sort((a, b) => counts[b] - counts[a])[0];
-    if (suggestedCategory) {
-      const matches = await Event.find({
-        category: suggestedCategory,
-        status:   'approved',
-        _id: { $nin: user.rsvpedEvents.map(r => r.eventID) }
-      })
-      .sort('eventDate')
-      .limit(5)
-      .lean();
+    
+    if (user && user.rsvpedEvents) { 
+      const counts = {};
+      user.rsvpedEvents.forEach(r => {
+        if (r.eventID?.category) {
+          counts[r.eventID.category] = (counts[r.eventID.category] || 0) + 1;
+        }
+      });
+      suggestedCategory = Object.keys(counts)
+        .sort((a, b) => counts[b] - counts[a])[0];
+      if (suggestedCategory) {
+        const matches = await Event.find({
+          category: suggestedCategory,
+          status:   'approved',
+          _id: { $nin: user.rsvpedEvents.map(r => r.eventID) }
+        })
+        .sort('eventDate')
+        .limit(5)
+        .lean();
 
-      suggestedEvents = matches.map(e => ({
-        ...e,
-        rsvpCount: e.rsvpUserIDs.length,
-        hasRSVPed: req.session.userId
-          ? e.rsvpUserIDs.some(id => id.toString() === req.session.userId)
-          : false,
-        isFull: e.rsvpUserIDs.length >= e.capacity
-      }));
+        suggestedEvents = matches.map(e => ({
+          ...e,
+          rsvpCount: e.rsvpUserIDs.length,
+          hasRSVPed: req.session.userId
+            ? e.rsvpUserIDs.some(id => id.toString() === req.session.userId)
+            : false,
+          isFull: e.rsvpUserIDs.length >= e.capacity
+        }));
 
-      if (suggestedEvents.length === 0) {
-        suggestedCategory = null;
+        if (suggestedEvents.length === 0) {
+          suggestedCategory = null;
+        }
       }
+    } else {
+      console.warn(`User not found or no rsvpedEvents for userId: ${req.session.userId}`);
+      suggestedCategory = null;
     }
   }
 

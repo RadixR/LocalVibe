@@ -29,10 +29,10 @@
           <td>
             {{this.message}}
             {{#if (eq this.type 'eventRejected')}}
-              &nbsp;Please recreate the event from your dashboard.
+              &nbsp;Your event has been rejected.
             {{/if}}
             {{#if (eq this.type 'eventChangesRequested')}}
-              &nbsp;Please recreate the event from your dashboard.
+              &nbsp;Please edit the event from your dashboard.
             {{/if}}
           </td>
           <td>{{formatDateTime this.timestamp}}</td>
