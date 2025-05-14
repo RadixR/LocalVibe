@@ -108,7 +108,7 @@ exports.mapView = async (req, res) => {
     }
     
     const events = await Event.find(q)
-                             .select('_id title address eventDate startTime description latitude longitude')
+                             .select('_id title address eventDate startTime description latitude longitude tags')
                              .sort(sortOption);
 
     const plainEvents = events.map(e => e.toObject());

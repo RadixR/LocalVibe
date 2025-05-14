@@ -3,6 +3,14 @@
 <p><strong>Address:</strong> {{ev.address}}</p>
 <p>{{ev.description}}</p>
 <p><strong>Capacity:</strong> {{ev.rsvpUserIDs.length}}/{{ev.capacity}}</p>
+{{#if ev.tags.length}}
+  <p>
+    <strong>Tags:</strong>
+    {{#each ev.tags}}
+      <span class="badge bg-info text-dark me-1">{{this}}</span>
+    {{/each}}
+  </p>
+{{/if}}
 {{#if ev.ticketLink}}
   <p><a href="{{ev.ticketLink}}" target="_blank">Buy Tickets</a></p>
 {{/if}}

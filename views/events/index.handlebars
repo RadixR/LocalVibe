@@ -9,6 +9,15 @@
       <p><small>{{formatDate this.eventDate}} at {{formatTime this.startTime}}</small></p>
       <p><small>Location: {{this.address}}</small></p>
       <p><small>RSVPs: {{this.rsvpCount}}/{{this.capacity}}</small></p>
+      {{#if this.tags.length}}
+        <p class="mb-1">
+          <small>Tags: 
+            {{#each this.tags}}
+              <span class="badge bg-info text-dark me-1">{{this}}</span>
+            {{/each}}
+          </small>
+        </p>
+      {{/if}}
       {{#if session.userId}}
         <div>
           {{#if this.hasRSVPed}}

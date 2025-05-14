@@ -20,6 +20,15 @@
           {{#if this.description}}
             <p class="event-description-snippet">{{truncateText this.description 100}}</p>
           {{/if}}
+          {{#if this.tags.length}}
+            <p class="mb-0">
+              <small>Tags: 
+                {{#each this.tags}}
+                  <span class="badge bg-info text-dark me-1">{{this}}</span>
+                {{/each}}
+              </small>
+            </p>
+          {{/if}}
         </li>
       {{/each}}
     </ul>
